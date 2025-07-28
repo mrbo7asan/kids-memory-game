@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة مطابقة البطاقات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: bounceIn 1s ease-out;
+        }
+
+        .game-title {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .score-board {
+            background: rgba(255,255,255,0.9);
+            padding: 15px 30px;
+            border-radius: 20px;
+            display: flex;
+            gap: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .score-item {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .card:hover {
+            transform: scale(1.05) rotateY(5deg);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            animation: matchPulse 0.8s ease-in-out;
+            transform: scale(1.1);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            border: 3px solid #fff;
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            font-size: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .card-front {
+            transform: rotateY(180deg);
+            font-size: 4rem;
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+        }
+
+        .control-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .sound-toggle {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .sound-toggle.muted {
+            background: linear-gradient(135deg, #999 0%, #666 100%);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            animation: celebrationPop 0.5s ease-out;
+        }
+
+        .celebration h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 2rem;
+        }
+
+        .stars {
+            font-size: 3rem;
+            margin: 15px 0;
+            animation: twinkle 1s ease-in-out infinite alternate;
+        }
+
+        /* الحركات والأنيميشن */
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes matchPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(5deg); }
+            100% { transform: scale(1.1); }
+        }
+
+        @keyframes celebrationPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes twinkle {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.2); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .card.wrong {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .card.flip-back {
+            animation: flipBack 0.6s ease-in-out forwards;
+        }
+
+        @keyframes flipBack {
+            0% { transform: rotateY(180deg) scale(1.05); }
+            50% { transform: rotateY(90deg) scale(1.1); }
+            100% { transform: rotateY(0deg) scale(1); }
+        }
+
+        .card-front img {
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            border-radius: 12px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            .card {
+                width: 90px;
+                height: 90px;
+            }
+            
+            .card-front {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <h1 class="game-title">🎮 لعبة مطابقة البطاقات 🎮</h1>
+        <div class="score-board">
+            <div class="score-item">
+                <div>النقاط</div>
+                <div id="score">0</div>
+            </div>
+            <div class="score-item">
+                <div>المحاولات</div>
+                <div id="moves">0</div>
+            </div>
+            <div class="score-item">
+                <div>الوقت</div>
+                <div id="timer">00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container" id="gameContainer">
+        <!-- البطاقات ستُضاف هنا بواسطة JavaScript -->
+    </div>
+
+    <div class="control-buttons">
+        <button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="تشغيل/إيقاف الصوت">🔊</button>
+        <button class="btn btn-restart" onclick="restartGame()">🔄 بداية جديدة</button>
+    </div>
+
+    <div class="celebration" id="celebration">
+        <h2>🎉 مبروك! أحسنت! 🎉</h2>
+        <div class="stars">⭐ ⭐ ⭐</div>
+        <p>لقد نجحت في مطابقة جميع البطاقات!</p>
+        <button class="btn btn-restart" onclick="restartGame()">العب مرة أخرى</button>
+    </div>
+
+    <script>
+        // ========== للاستخدام على GitHub Pages ==========
+        // بعد رفع الصور، استخدم هذه الروابط:
+        const children = [
+            'images/child1.jpg',
+            'images/child2.jpg',
+            'images/child3.jpg',
+            'images/child4.jpg',
+            'images/child5.jpg',
+            'images/child6.jpg'
+        ];
+        
+        /* 
+        📝 ملاحظات مهمة:
+        - تأكد من رفع 6 صور باسماء: child1.jpg, child2.jpg, الخ
+        - يمكن أن تكون .png أو .jpg
+        - إذا كانت بصيغة أخرى، غيّر الامتدادات أعلاه
+        
+        🔗 ستصبح اللعبة متاحة على:
+        https://USERNAME.github.io/REPOSITORY-NAME
+        */
+        
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let score = 0;
+        let timer = 0;
+        let gameTimer;
+        let canFlip = true;
+        let soundEnabled = true;
+
+        // مؤثرات صوتية للعبة
+        const sounds = {
+            flip: createSound([440, 523], 0.1, 'sine'),
+            match: createSound([523, 659, 784], 0.2, 'triangle'),
+            wrong: createSound([220, 196], 0.15, 'sawtooth'),
+            win: createSound([523, 659, 784, 1047], 0.4, 'sine'),
+            gameStart: createSound([392, 523, 659], 0.3, 'triangle'),
+            click: createSound([800], 0.05, 'square')
+        };
+
+        // إنشاء الأصوات باستخدام Web Audio API
+        function createSound(frequencies, duration, waveType = 'sine') {
+            return function() {
+                if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    frequencies.forEach((freq, index) => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + index * 0.1);
+                        oscillator.type = waveType;
+                        
+                        gainNode.gain.setValueAtTime(0, audioContext.currentTime + index * 0.1);
+                        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + index * 0.1 + 0.01);
+                        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + index * 0.1 + duration);
+                        
+                        oscillator.start(audioContext.currentTime + index * 0.1);
+                        oscillator.stop(audioContext.currentTime + index * 0.1 + duration);
+                    });
+                }
+            };
+        }
+
+        // تشغيل الأصوات التفاعلية
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            try {
+                if (sounds[type]) {
+                    sounds[type]();
+                }
+                
+                // إضافة الاهتزاز للأجهزة المدعومة
+                if (navigator.vibrate) {
+                    switch(type) {
+                        case 'flip':
+                            navigator.vibrate(50);
+                            break;
+                        case 'match':
+                            navigator.vibrate([100, 50, 100]);
+                            break;
+                        case 'win':
+                            navigator.vibrate([200, 100, 200, 100, 200]);
+                            break;
+                        case 'wrong':
+                            navigator.vibrate(200);
+                            break;
+                    }
+                }
+            } catch (error) {
+                console.log('Audio not supported:', error);
+            }
+        }
+
+        // تبديل تشغيل/إيقاف الصوت
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundToggle = document.getElementById('soundToggle');
+            if (soundEnabled) {
+                soundToggle.innerHTML = '🔊';
+                soundToggle.classList.remove('muted');
+                playSound('click');
+            } else {
+                soundToggle.innerHTML = '🔇';
+                soundToggle.classList.add('muted');
+            }
+        }
+
+        function initGame() {
+            const gameContainer = document.getElementById('gameContainer');
+            gameContainer.innerHTML = '';
+            
+            // إنشاء مصفوفة البطاقات (كل طفل يظهر مرتين)
+            cards = [...children, ...children];
+            
+            // خلط البطاقات
+            for (let i = cards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cards[i], cards[j]] = [cards[j], cards[i]];
+            }
+
+            // إنشاء عناصر البطاقات
+            cards.forEach((child, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = index;
+                card.dataset.child = child;
+                
+                card.innerHTML = `
+                    <div class="card-face card-back">❓</div>
+                    <div class="card-face card-front">
+                        <img src="${child}" alt="صورة طفل" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y0ZjRmNCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1zaXplPSIzMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+👶</3RleHQ+PC9zdmc+'">
+                    </div>
+                `;
+                
+                card.addEventListener('click', flipCard);
+                gameContainer.appendChild(card);
+            });
+
+            // إعادة تعيين المتغيرات
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            score = 0;
+            timer = 0;
+            canFlip = true;
+            
+            updateDisplay();
+            startTimer();
+            
+            // تشغيل صوت بداية اللعبة
+            setTimeout(() => playSound('gameStart'), 500);
+        }
+
+        function flipCard(event) {
+            if (!canFlip) return;
+            
+            const card = event.currentTarget;
+            
+            // منع قلب البطاقة إذا كانت مقلوبة أو متطابقة
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+
+            // منع قلب أكثر من بطاقتين
+            if (flippedCards.length >= 2) return;
+
+            // قلب البطاقة
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            playSound('flip');
+
+            // إضافة تأثير بصري
+            card.style.transform = 'rotateY(180deg) scale(1.1)';
+            setTimeout(() => {
+                card.style.transform = 'rotateY(180deg)';
+            }, 200);
+
+            // التحقق من التطابق عند قلب بطاقتين
+            if (flippedCards.length === 2) {
+                moves++;
+                updateDisplay();
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            canFlip = false;
+            const [card1, card2] = flippedCards;
+            
+            setTimeout(() => {
+                if (card1.dataset.child === card2.dataset.child) {
+                    // تطابق صحيح
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    score += 10;
+                    playSound('match');
+                    
+                    // تأثير الاحتفال للبطاقات المتطابقة
+                    [card1, card2].forEach(card => {
+                        card.style.background = 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)';
+                        card.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.8)';
+                    });
+                    
+                    // تفريغ المصفوفة فوراً للبطاقات المتطابقة
+                    flippedCards = [];
+                    canFlip = true;
+                    
+                    // التحقق من الفوز
+                    if (matchedPairs === children.length) {
+                        setTimeout(() => {
+                            showCelebration();
+                            playSound('win');
+                        }, 500);
+                    }
+                } else {
+                    // عدم تطابق - إبقاء البطاقات مقفلة مؤقتاً
+                    card1.classList.add('wrong');
+                    card2.classList.add('wrong');
+                    playSound('wrong');
+                    
+                    // قلب البطاقات تلقائياً بعد إظهار الخطأ
+                    setTimeout(() => {
+                        card1.classList.remove('flipped', 'wrong');
+                        card2.classList.remove('flipped', 'wrong');
+                        
+                        // إضافة تأثير الانقلاب التدريجي
+                        card1.style.transform = '';
+                        card2.style.transform = '';
+                        
+                        // تفريغ المصفوفة والسماح بالنقر مرة أخرى
+                        flippedCards = [];
+                        canFlip = true;
+                    }, 1200);
+                }
+                
+                updateDisplay();
+            }, 600);
+        }
+
+        function showCelebration() {
+            stopTimer();
+            const celebration = document.getElementById('celebration');
+            celebration.style.display = 'block';
+            
+            // إضافة تأثيرات الاحتفال
+            document.body.style.background = 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fad0c4 100%)';
+            
+            // إنشاء نجوم متحركة
+            createStars();
+        }
+
+        function createStars() {
+            for (let i = 0; i < 20; i++) {
+                const star = document.createElement('div');
+                star.innerHTML = '⭐';
+                star.style.position = 'fixed';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.fontSize = Math.random() * 2 + 1 + 'rem';
+                star.style.zIndex = '999';
+                star.style.animation = `twinkle ${Math.random() * 2 + 1}s ease-in-out infinite alternate`;
+                document.body.appendChild(star);
+                
+                setTimeout(() => {
+                    star.remove();
+                }, 3000);
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('moves').textContent = moves;
+        }
+
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                timer++;
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(gameTimer);
+        }
+
+        function restartGame() {
+            stopTimer();
+            document.getElementById('celebration').style.display = 'none';
+            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            
+            // إزالة النجوم المتبقية
+            document.querySelectorAll('div').forEach(el => {
+                if (el.innerHTML === '⭐') el.remove();
+            });
+            
+            initGame();
+        }
+
+        // بدء اللعبة عند تحميل الصفحة
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
